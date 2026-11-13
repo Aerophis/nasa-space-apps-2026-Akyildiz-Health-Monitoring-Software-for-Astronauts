@@ -1,0 +1,24 @@
+# Project Python environment
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Temporary and generated files
+*.tmp
+*.temp
+*.log
+*.swp
+*~
+.coverage
+htmlcov/
+
+# Windows metadata
+Thumbs.db
+Desktop.ini

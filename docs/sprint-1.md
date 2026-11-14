@@ -1,123 +1,141 @@
-# Sprint 1 kapanış raporu — AstroCare AI
+# Sprint 1 closure report — AstroCare AI
 
-## 1. Sprint bilgileri ve hedefleri
+## 1. Sprint information and objectives
 
-- Takım: AKYILDIZ · Sprint: 1 / 4 · Tarih: 14 Kasım 2026.
-- Yarışma: NASA Space Apps Challenge 2026.
-- Görev: Create Health Monitoring Software for Astronauts on Space Missions.
-- Scrum Master / takım lideri / ana geliştirici: kullanıcı.
-- Hedef: üç sağlık metriğini sentetik verilerle izleyen, tanı/tedavi üretmeyen ilk çalışan prototip.
-- Durum: teknik kontroller başarılı; bilimsel karar DÜZELTME GEREKLİ; rapor ve GitHub teslimi Scrum Master onayını bekliyor.
-- Kesin sprint saatleri kaydedilmedi. Rapor, Scrum Master'ın sağladığı 11 başlığa göre düzenlendi; Niğde organizasyonunun ayrı format yönergesi henüz sağlanmadı.
+- Team: AKYILDIZ · Sprint: 1 / 4 · Date: 14 November 2026.
+- Event: NASA Space Apps Challenge 2026.
+- Challenge: Create Health Monitoring Software for Astronauts on Space Missions.
+- Scrum Master / team lead / lead developer: the user.
+- Objective: the first working prototype for monitoring three health-related metrics with synthetic data, without diagnosis or treatment advice.
+- Status at the original review: technical checks passed; scientific status CORRECTIONS REQUIRED; the report and GitHub delivery awaited Scrum Master approval.
+- Exact sprint times were not recorded. The report follows the 11 headings supplied by the Scrum Master; a separate format specification from the Niğde organizers had not been provided.
 
-## 2. Planlanan görevler
+This is the historical pre-delivery review record. Pending-approval statements below
+refer to that review, not the current repository state. The English revision preserves
+the original accomplishments, test results, and unresolved issues.
 
-- Tekrarlanabilir demo verisi; ayrı veri, analiz ve grafik modülleri; Streamlit paneli.
-- Günlük fark, yedi günlük ortalama, geçerli kayıt sayısı ve eksik/geçersiz veri kontrolleri.
-- Otomatik testler, uygulama açılışı, temel arayüz incelemesi ve bilimsel araştırma.
-- Planlanan dağılım: liderde koordinasyon/entegrasyon; Muhammed Ali'de Python/test desteği; bilimsel araştırma sorumlusunda literatür ve değerlendirme. Planlanan görevler gerçekleşmiş katkı sayılmaz.
+## 2. Planned work
 
-## 3. Gerçekten tamamlanan görevler
+- Reproducible demo data; separate data, analysis, and chart modules; a Streamlit dashboard.
+- Daily changes, 7-day averages, valid observation counts, and missing/invalid data checks.
+- Automated tests, startup checks, a basic UI review, and scientific research.
+- Planned responsibilities: coordination/integration by the lead; Python/test support by Muhammed Ali; literature review and evaluation by the scientific research lead. Assignments are not evidence of completed individual contributions.
 
-- AI destekli Streamlit/Pandas/Plotly prototipi: kurmaca profil, 21 günlük sabit tohumlu veri, üç özet kart, üç etkileşimli grafik, tarih/aralık seçimi ve günlük tablo.
-- Önceki takvim gününe göre fark, yedi günlük ortalama ve geçerli ölçüm sayısı; eksikler sıfır sayılmıyor.
-- DEMO — SIMULATED DATA etiketi, NASA onayı bulunmaması ve teşhis/ilaç önerisi üretmeme açıklamaları.
-- Liderin yazdığını bildirdiği `analyze_daily()` içindeki `sleep_hours` dönüşümü ve iki testi dosyada doğrulandı. Dakika sütunu ve eksik değerler korunuyor.
-- Kod/test yapısı ve yerel geliştirme rehberi hazır; 23 test bağımsız yeniden çalıştırıldı.
-- Liderin bildirdiği temel arayüz incelemesi ve sohbet ekran görüntüsü mevcut; kapsamlı kullanıcı testi yapılmış sayılmadı.
-- İki bilimsel belgenin varlığı ve içerikleri bu kapanışta doğrulandı; uygulamanın bilimsel kabulü tamamlanmış sayılmadı.
+## 3. Work actually completed
 
-## 4. Tamamlanamayan veya ertelenen görevler
+- An AI-assisted Streamlit/Pandas/Plotly prototype: a fictional profile, 21 days of fixed-seed data, three summary cards, three interactive charts, date/range selection, and a daily table.
+- Previous-calendar-day changes, 7-day averages, and valid measurement counts; missing values are not counted as zero.
+- The DEMO — SIMULATED DATA label, a statement that the product is not NASA-approved, and statements that it does not provide diagnoses or medication advice.
+- The `sleep_hours` conversion in `analyze_daily()`, reported as written by the lead, and its two tests were verified in the files. The minutes column and missing values are preserved.
+- The code/test structure and local development guide were prepared; 23 tests were independently rerun.
+- The lead reported a basic UI review, and a screenshot was shared in the chat; this was not treated as comprehensive usability testing.
+- The existence and contents of two scientific documents were verified during closure; scientific acceptance of the application was not considered complete.
 
-- Bilimsel düzeltmelerin yazılı kapanışı ve bilimsel sorumlunun ek uygulama kabul tutanağı.
-- NASA resmî Resources listesinin kesin doğrulanması ve uygun gerçek veri entegrasyonu.
-- Ölçüm koşulu/sensör kalitesi, kişisel başlangıç değeri ve planlanan–gerçekleşen egzersiz karşılaştırması.
-- Ayrıntılı kullanılabilirlik testi ve arayüz iyileştirmeleri.
-- Muhammed Ali'nin tamamladığı bireysel görevlerin teyidi; Sprint 1 commit/push onayı.
+## 4. Incomplete or deferred work
 
-## 5. Karşılaşılan problemler ve engeller
+- Written closure of scientific corrections and an additional application acceptance record from the scientific research lead.
+- Definitive verification of the official NASA Resources list and integration of suitable real data.
+- Measurement conditions/sensor quality, a personal baseline, and planned-versus-completed exercise comparisons.
+- Detailed usability testing and UI improvements.
+- Confirmation of Muhammed Ali's completed individual tasks; approval for the Sprint 1 commit/push.
 
-- İlk arayüz testinde göreli uygulama yolu; kısıtlı terminalde yerel soket erişimi.
-- Liderin terminalinde göreli Python yolu bulunamadı; terminalin o andaki klasörü kesin kaydedilmedi.
-- Bilimsel PDF hazırlanırken kod/ekran/test çıktıları görülmemiş; bu sınırlama belgenin kendi içinde açıkça yazıyor.
-- DOCX'teki bazı durum notları sentetik demoyu henüz oluşturulmamış gösteriyor; bunlar mevcut prototiple güncel değil.
-- Yazılı ek bilimsel kabul, bağımsız Scrum format yönergesi ve resmî Resources teyidi yok. README yalnızca depo başlığını içeriyor.
+## 5. Problems and blockers
 
-## 6. Uygulanan çözümler
+- A relative application path in the initial UI test; restricted local socket access in the terminal.
+- The lead's terminal could not resolve the relative Python path; its working directory at the time was not definitively recorded.
+- The scientific PDF had been prepared without reviewing code, screenshots, or test outputs; the document explicitly states this limitation.
+- Some DOCX status notes described the synthetic demo as not yet created; those notes were no longer current for the working prototype.
+- No written additional scientific acceptance, independent Scrum format specification, or official Resources confirmation was available. At that review, the README contained only the repository title.
 
-- Arayüz testinin dosya yolu düzeltildi; yerel bağlantı kontrolleri gerekli izinle çalıştırıldı; proje klasörüne geçiş komutu açıklandı.
-- PDF, `pypdf`; DOCX, `python-docx` ile paketlenmiş belge araçları kullanılarak ayrıştırıldı. Dosyalar düz metin gibi okunmadı, kaynak belgeler değiştirilmedi, projeye paket kurulmadı.
-- PDF'nin 1. ve 8. sayfaları ayrıca görüntülendi. DOCX içerik incelemesi yapıldı; sayfa düzeni/görsel kalite onayı verilmedi.
-- Belge tarihindeki kanıt eksikliğiyle bugünkü teknik test sonucu ayrıldı; bilimsel karar değiştirilmedi.
-- Bu kapanışta yalnızca bu rapor düzenlendi. Python kodları, testler, README, .gitignore ve requirements.txt değiştirilmedi; yeni özellik eklenmedi.
+## 6. Solutions applied
 
-## 7. Takım üyelerinin bireysel katkıları
+- The UI test path was corrected; local connection checks were run with the necessary permission; navigation to the project directory was explained.
+- The PDF was parsed with `pypdf` and the DOCX with `python-docx` using bundled document tools. The files were not read as plain text, source documents were not modified, and no project package was installed.
+- PDF pages 1 and 8 were also viewed. The DOCX content was reviewed; no page-layout or visual-quality approval was given.
+- The evidence limitations at the document's preparation date were distinguished from the later technical test results; the scientific decision was not changed.
+- Only this report was edited during closure. Python code, tests, README, .gitignore, and requirements.txt were unchanged; no feature was added.
 
-| Kişi / destek | Kaydedilen katkı ve kanıt sınırı |
+## 7. Individual team contributions
+
+| Person / support | Recorded contribution and evidence limits |
 | --- | --- |
-| Takım lideri / Scrum Master / ana geliştirici | Planlama, Codex yönlendirmesi, bilimsel koordinasyon ve arayüz incelemesi kendi beyanına dayanıyor. Kendi yazdığını belirttiği sleep_hours hesabı ile iki test dosyada mevcut ve yeniden çalıştırıldı; yazarlık beyanı kullanıcıya ait. |
-| Muhammed Ali | Python/test destek rolü mevcut; tamamlanmış bireysel görevler hakkında ayrıntılı doğrulanmış kayıt yok. Katkılar teyit bekliyor. |
-| Bilimsel araştırma sorumlusu — eczacılık öğrencisi, liderin kuzeni | Liderin atfına göre araştırma/rapor hazırlama, ölçüm ve kaynak/lisans incelemesi, ortak değerlendirme ve Sprint 2 önerileri. İki belge ve bilimsel içerikleri görüldü; kişisel yazarlık ve ortak toplantı ayrıntıları bağımsız doğrulanmadı. |
-| Codex — AI desteği | İlk prototip ve başlangıçtaki 21 test, teknik doğrulama, belge incelemesi ve raporlama desteği. Tüm prototip liderin elle yazdığı kod olarak sunulmaz. |
+| Team lead / Scrum Master / lead developer | Planning, Codex direction, scientific coordination, and UI review are based on the lead's declaration. The sleep_hours calculation and two tests attributed to the lead were present and rerun; individual authorship is attributed according to that declaration. |
+| Muhammed Ali | Python/test support role; no detailed verified record of completed individual tasks. Contributions await confirmation. |
+| Scientific research lead — pharmacy student and the lead's cousin | According to the lead: research/report preparation, measurement and source/license review, joint evaluation, and Sprint 2 recommendations. The two documents and their scientific contents were reviewed; individual authorship and joint meeting details were not independently verified. |
+| Codex — AI assistance | Initial prototype and original 21 tests, technical verification, document review, and reporting support. The complete prototype is not presented as code written by hand by the lead. |
 
-## 8. Test ve doğrulama sonuçları
+## 8. Test and verification results
 
-- Son bağımsız çalıştırma: `.\.venv\Scripts\python.exe -m pytest -q` → **23 passed in 1.47s**.
-- Önceki kapanış çalıştırması 1.52s; liderin bildirdiği önceki çalıştırma 1.44s idi. Süre farkı ayrı çalıştırmalardan kaynaklanır.
-- `test_sleep_minutes_to_hours`: 450 dakika → 7.5 saat; `test_missing_sleep_data`: None → NaN, sıfıra dönüştürülmüyor.
-- Diğer testler veri üretimi, takvim boşlukları, geçersiz/yinelenen kayıtlar, fark/ortalama, grafik serileri ve arayüz tarih/aralık kontrollerini kapsıyor. Test kapsam yüzdesi ölçülmedi.
-- Uygulama importları ve `pip check` başarılı. Önceki denetimde requirements.txt ile kurulu sürümlerin eşleşmesi doğrulandı.
+- Final independent run at closure: `.\.venv\Scripts\python.exe -m pytest -q` → **23 passed in 1.47s**.
+- An earlier closure run took 1.52s; the lead reported a previous run of 1.44s. These are separate runs.
+- `test_sleep_minutes_to_hours`: 450 minutes → 7.5 hours; `test_missing_sleep_data`: None → NaN, without conversion to zero.
+- Other tests cover data generation, calendar gaps, invalid/duplicate records, changes/averages, chart series, and UI date/range controls. Test coverage percentage was not measured.
+- Application imports and `pip check` passed. An earlier audit verified that requirements.txt matched installed versions.
 - Python 3.11.9; Streamlit 1.67.0; Pandas 3.1.1; Plotly 7.1.0; pytest 9.2.0.
-- Geçici 127.0.0.1:8502 sunucusu yeniden başlatıldı: sağlık 200 / ok, ana sayfa 200. Kontrol sonrası durduruldu; mevcut 8501 oturumuna dokunulmadı.
-- .gitignore sanal ortamı, önbellekleri, yerel sırları ve geçici dosyaları dışlıyor. Teslim listesi bilimsel belgeleri kapsamıyor. Temel gizli bilgi/büyük dosya kontrolü mutlak güvence değildir.
-- Teknik test başarısı klinik doğrulama veya bilimsel kabul yerine geçmez.
+- A temporary 127.0.0.1:8502 server was restarted: health 200 / ok, root page 200. It was stopped afterward; the existing 8501 session was not touched.
+- .gitignore excludes the environment, caches, local secrets, and temporary files. The proposed delivery excludes scientific documents. Basic secret/large-file checks are not an absolute guarantee.
+- Passing technical tests does not replace clinical validation or scientific acceptance.
 
-## 9. Bilimsel incelemenin sonucu ve açık maddeler
+## 9. Scientific review outcome and open issues
 
-İncelenen yerel belgeler (GitHub teslimine dahil değil):
+Local documents reviewed, excluded from GitHub delivery:
 
-- `docs/research/AKYILDIZ_Sprint1_Bilimsel_Dogrulama_Raporu.pdf`: 8 sayfa; karar 1. ve 8. sayfalarda **DÜZELTME GEREKLİ**.
-- `docs/research/AstroCare_Bilimsel_Arastirma_Duzeltilmis.docx`: bilimsel araştırma, ölçüm sınırlamaları, kaynak/lisans matrisi ve NASA veri kaynakları değerlendirmesi.
+- `docs/research/AKYILDIZ_Sprint1_Bilimsel_Dogrulama_Raporu.pdf`: 8 pages; the decision on pages 1 and 8 is **CORRECTIONS REQUIRED**.
+- `docs/research/AstroCare_Bilimsel_Arastirma_Duzeltilmis.docx`: scientific research, measurement limitations, a source/license matrix, and NASA data source evaluation.
 
-Ayrı `AstroCare_Bilimsel_Arastirma_Duzeltilmis.pdf` dosyası bu klasörde yok; incelenmiş sayılmadı.
+The separate `AstroCare_Bilimsel_Arastirma_Duzeltilmis.pdf` was not present in this directory and was not considered reviewed.
 
-PDF, bilimsel eğilim tasarımını koşullu uygun buluyor; hazırlanırken uygulama kodu, ekranlar ve testlerin incelenmediğini belirtiyor. Bugünkü teknik denetimde bu unsurlar kısmen bağımsız doğrulandı; bu durum bilimsel sorumlunun yeni kabul tutanağı değildir. Ortak ek inceleme lider tarafından bildirildi, yazılı kapanış yok. **DÜZELTME GEREKLİ kararı korunuyor.**
+The PDF conditionally supports the descriptive trend design but states that application
+code, screens, and tests had not been reviewed when it was prepared. Some of those
+items were independently verified technically during closure; this is not a new
+acceptance record from the scientific research lead. The lead reported an additional
+joint review, but no written closure exists. **CORRECTIONS REQUIRED remains the decision.**
 
-| Bilimsel öneri | Mevcut teknik kanıt / açık iş |
+| Scientific recommendation | Current technical evidence / open work at the Sprint 1 review |
 | --- | --- |
-| Eksik ölçümü sıfır saymama, geçerli kayıt sayısı | Kod ve testlerde doğrulandı; düşük kapsama için açıklayıcı bildirim geliştirmesi açık. |
-| Sentetik köken ve klinik iddia sınırı | Genel demo etiketi ve kaynak alanları mevcut; her grafik/istatistik için ayrıntılı köken/kalite izi kısmi. |
-| Gün ve yedi günlük pencere | UTC takvim günü, ortalama ve sayım mevcut; başlangıç/bitiş saatlerinden gece yarısını aşan uyku hesabı yok. |
-| Dinlenme nabzında karşılaştırılabilir koşullar | Yalnızca sentetik seri var; dinlenme durumu/sensör kalitesi ve kişisel baz çizgisi yok. |
-| Egzersizde plan, gerçekleşme ve tür | Yalnızca süre var; plan/tür karşılaştırması yok. Süreden kas/kemik teşhisi üretilmiyor. |
-| NASA verisi ve lisans izi | Gerçek veri indirme/işleme/entegrasyonu yok; kaynak ve dosya bazlı uygunluk açık. |
+| Do not count missing measurements as zero; show valid counts | Verified in code and tests; explanatory low-coverage notifications remain open. |
+| Synthetic provenance and limits on clinical claims | A general demo label and source fields exist; detailed per-chart/statistic provenance/quality is partial. |
+| Day definition and 7-day window | UTC calendar days, averages, and counts exist; no overnight sleep calculation from start/end timestamps. |
+| Comparable resting-heart-rate conditions | Only a synthetic series exists; resting-condition/sensor-quality metadata and a personal baseline are absent. |
+| Planned/completed exercise and type | Duration only; no plan/type comparison. Exercise duration is not used to diagnose muscle/bone conditions. |
+| NASA data and license traceability | No real data download/processing/integration; source and file-level suitability remain unresolved. |
 
-Belgelerdeki uyku önerisi, nabız koşulları ve egzersiz sınırlamaları klinik alarm/teşhis kuralına dönüştürülmedi. DOCX'teki henüz üretilmemiş demo notları, belgenin kanıt anını yansıtır; güncel prototip durumu bölüm 3 ve 8'de kayıtlıdır.
+The documents' sleep guidance, heart-rate conditions, and exercise limitations were
+not converted into clinical alarm or diagnostic rules. DOCX notes describing an
+uncreated demo reflect the evidence available to that document; the working prototype
+at closure is recorded in sections 3 and 8.
 
-Belgeler OSD-575'i üç metriğin günlük serisi yerine serum biyokimyası kaynağı olarak değerlendiriyor. Resmî Resources listesinin tam doğrulanamadığını, ikincil listenin kesin uygunluk kanıtı olmadığını belirtiyorlar. Bu kapanışta dış kaynakların tümü veya lisans iddiaları yeniden doğrulanmadı. **NASA veri entegrasyonu ve Resources şartının karşılandığı iddia edilmez.** Bilimsel belgelerin paylaşım hakları onaylanmadı; GitHub'a eklenmeyecekler.
+The documents evaluate OSD-575 as serum chemistry rather than a daily series for the
+three metrics. They state that the complete official Resources list could not be
+verified and that a secondary list does not establish definitive eligibility. Not all
+external sources or license claims were reverified during closure. **Neither NASA
+data integration nor compliance with the Resources requirement is claimed.** Permission
+to redistribute the scientific documents was not confirmed; they will not be added to GitHub.
 
-## 10. Sprint 2'ye aktarılan işler
+## 10. Work carried into Sprint 2
 
-Scrum Master'ın öncelik sırası; bu kapanışta geliştirme başlatılmadı:
+The Scrum Master's priority order; implementation had not started at this closure review:
 
-1. Veri kaynağı ve ölçüm kalitesinin daha iyi gösterilmesi.
-2. Eksik, tekrarlı ve geçersiz ölçüm kontrollerinin genişletilmesi.
-3. Kullanıcı tarafından yeni sağlık kaydı girilmesi.
-4. Kişisel başlangıç değerleriyle karşılaştırma.
-5. Kaynaklara dayalı, tanı koymayan açıklayıcı bildirimler ve bilimsel düzeltmelerin yazılı takibi.
-6. Planlanan–gerçekleşen egzersiz ve egzersiz türü karşılaştırması.
-7. NASA resmî Resources listesinin kesin doğrulanması — açık, yüksek öncelikli araştırma işi.
-8. Uygun NASA veri kaynağının gerçekten kullanılması — kaynak/lisans/alan uygunluğu doğrulandıktan sonra, açık ve yüksek öncelikli entegrasyon işi.
-9. Arayüz iyileştirmeleri; yöntem alanındaki Markdown/görünüm sorununun değerlendirilmesi.
+1. Improve the display of data provenance and measurement quality.
+2. Extend missing, duplicate, and invalid measurement checks.
+3. Allow users to enter new health records.
+4. Compare measurements with personal baseline values.
+5. Provide source-based, non-diagnostic explanatory messages and written tracking of scientific corrections.
+6. Compare planned/completed exercise and exercise types.
+7. Definitively verify the official NASA Resources list — open, high-priority research work.
+8. Actually use a suitable NASA data source after verifying source/license/field suitability — open, high-priority integration work.
+9. Improve the UI and review the Markdown/display issue in the methodology area.
 
-Ollama yalnızca zaman ve teknik uygunluk varsa ileride değerlendirilecek. Gelecek Python görevlerinde dosya adı, tam yol, fonksiyon, konum, görev, beklenen sonuç, test ve VS Code Explorer yolu belirtilecek; önce ipucu verilip liderin kodu yazması beklenecek.
+Ollama will be considered later only if time and technical suitability allow. Future
+Python tasks will identify the filename, full path, function, location, task, expected
+result, test, and VS Code Explorer path; hints will precede the lead's own coding work.
 
-## 11. GitHub commit ve kanıt bağlantıları
+## 11. GitHub commit and evidence links
 
-- [Depo](https://github.com/Aerophis/nasa-space-apps-2026-Akyildiz-Health-Monitoring-Software-for-Astronauts).
-- [13feb3b ortam hazırlığı](https://github.com/Aerophis/nasa-space-apps-2026-Akyildiz-Health-Monitoring-Software-for-Astronauts/commit/13feb3bf71c91892d48266dd3293cf1915533f9c): yarışma öncesi ortam hazırlığı; Sprint 1 uygulama geliştirme commit'i değildir.
-- Yerel kanıtlar: [analiz](../astrocare/analysis.py), [liderin testleri](../tests/test_sleep_hours.py), [veri/grafik testleri](../tests/test_analysis.py), [arayüz testi](../tests/test_app.py), [çalıştırma rehberi](development.md). Henüz uzak Sprint 1 kanıtı değiller.
-- Sprint 1 commit/push yapılmadı; yeni commit bağlantısı ancak onay ve teslim sonrası kaydedilecek. Test terminal çıktıları bu sohbet içinde, ayrı dosya olarak oluşturulmadı.
-- Teslim adayları: `app.py`, `astrocare/__init__.py`, `astrocare/data.py`, `astrocare/analysis.py`, `astrocare/charts.py`, `tests/test_analysis.py`, `tests/test_app.py`, `tests/test_sleep_hours.py`, `docs/development.md`, `docs/sprint-1.md`.
-- Bu 10 dosya dışında ekleme yapılmayacak. Bilimsel PDF/DOCX, .venv, önbellekler, sırlar ve geçici dosyalar hariç. `docs/research/` yerelde izlenmeyen dosyalar olarak kalacak; toplu `git add .` kullanılmayacak.
-- Git indeksi boş; commit/push için Scrum Master onayı bekleniyor. README, .gitignore ve requirements.txt değiştirilmedi. README'ye kısa kurulum özeti eklenmesi yalnızca öneridir.
+- [Repository](https://github.com/Aerophis/nasa-space-apps-2026-Akyildiz-Health-Monitoring-Software-for-Astronauts).
+- [13feb3b environment preparation](https://github.com/Aerophis/nasa-space-apps-2026-Akyildiz-Health-Monitoring-Software-for-Astronauts/commit/13feb3bf71c91892d48266dd3293cf1915533f9c): pre-event environment preparation; not a Sprint 1 application development commit.
+- Local evidence at review: [analysis](../astrocare/analysis.py), [lead's tests](../tests/test_sleep_hours.py), [data/chart tests](../tests/test_analysis.py), [UI test](../tests/test_app.py), [development guide](development.md). These were not yet remote Sprint 1 evidence at that review.
+- At this historical review, the Sprint 1 commit/push had not been performed; a new commit link was to be recorded after approval and delivery. Terminal outputs were in the chat and were not saved as separate files.
+- Proposed delivery at review: `app.py`, `astrocare/__init__.py`, `astrocare/data.py`, `astrocare/analysis.py`, `astrocare/charts.py`, `tests/test_analysis.py`, `tests/test_app.py`, `tests/test_sleep_hours.py`, `docs/development.md`, `docs/sprint-1.md`.
+- No files beyond those 10 were to be added. Scientific PDF/DOCX files, .venv, caches, secrets, and temporary files were excluded. `docs/research/` was to remain untracked locally; bulk `git add .` was not to be used.
+- The index was empty and commit/push awaited Scrum Master approval. README, .gitignore, and requirements.txt were unchanged. A short README setup summary was only a recommendation.

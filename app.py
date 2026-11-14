@@ -2,20 +2,51 @@
 
 import pandas as pd
 import streamlit as st
+from datetime import date
+from textwrap import dedent
 
-from astrocare.analysis import analyze_daily
+from astrocare.analysis import analyze_daily, compare_periods
 from astrocare.charts import METRIC_LABELS, trend_chart
-from astrocare.data import generate_demo_data, prepare_daily_data
+from astrocare.data import generate_demo_data, prepare_daily_data, manual_form_record, validate_health_record
+from astrocare.storage import load_records, save_record, StorageError
 
 
 def display_value(value, metric):
     if pd.isna(value):
-        return "Veri yok"
+        return "No data"
     if metric == "sleep_minutes":
         minutes = round(value)
-        return f"{minutes // 60} sa {minutes % 60:02d} dk"
-    unit = "bpm" if metric == "resting_hr_bpm" else "dk"
+        return f"{minutes // 60} h {minutes % 60:02d} min"
+    unit = "bpm" if metric == "resting_hr_bpm" else "min"
     return f"{value:.1f} {unit}"
+
+
+def record_form(manual):
+    with st.expander("Add a fictional manual health record"):
+        st.caption("Enter invented measurements for DEMO-MANUAL-001 only. Do not enter real health or identifying information. A blank field is missing data; 0 is an explicit zero measurement.")
+        with st.form("manual_record", clear_on_submit=False):
+            measured = st.date_input("Measurement date (UTC day)", value=date(2026, 11, 15),
+                                     min_value=date(2000, 1, 1), max_value=date(2100, 12, 31), key="record_date")
+            sleep = st.text_input("Sleep duration (minutes)", key="sleep_input", help="0–1440; may be left blank.")
+            hr = st.text_input("Resting heart rate (bpm)", key="hr_input", help="A positive finite number; this is not a check against a clinical reference range.")
+            activity = st.text_input("Activity duration (minutes)", key="activity_input", help="0–1440; a blank field is not converted to zero.")
+            resting = st.checkbox("This fictional heart rate record represents resting conditions", key="rest_confirmed")
+            submitted = st.form_submit_button("Save demo record")
+        if submitted:
+            candidate = manual_form_record(measured, sleep, hr, activity, resting)
+            result = validate_health_record(candidate, manual.measured_at)
+            if not result.ok:
+                for error in result.errors:
+                    st.error(error)
+                return
+            try:
+                saved = save_record(candidate)
+            except StorageError as exc:
+                st.error(str(exc))
+                return
+            st.session_state["saved_notice"] = saved.warnings
+            st.session_state["pending_dataset"] = "Manual demo"
+            st.rerun()
 
 
 def main():
@@ -26,71 +57,104 @@ def main():
     [data-testid="stMetric"] {background: #14243b; border: 1px solid #344b68;
         border-radius: 12px; padding: 18px;}
     </style>""", unsafe_allow_html=True)
-    st.caption("AKYILDIZ  /  GÖREV SAĞLIĞI İZLEME PROTOTİPİ  /  SPRINT 1")
+    st.caption("AKYILDIZ  /  MISSION HEALTH MONITORING PROTOTYPE  /  SPRINT 2")
     st.title("✦ AstroCare AI")
-    st.write("Günlük ölçümleri incele, zaman içindeki değişimi takip et.")
-    st.warning("DEMO — SIMULATED DATA · Tüm ölçümler kurmacadır; gerçek NASA veya astronot sağlık verisi değildir.")
-    st.caption("Bu prototip teşhis, tıbbi risk puanı veya ilaç önerisi üretmez. NASA tarafından onaylanmış bir ürün değildir. Bu sürümde yapay zekâ modeli kullanılmaz.")
+    st.write("Explore daily measurements and track changes over time.")
+    st.warning("DEMO — SIMULATED DATA · All measurements are fictional; they are not real NASA or astronaut health data.")
+    st.caption("This prototype does not provide diagnoses, medical risk scores, or medication advice. It is not NASA-approved. This version does not run an AI model.")
+    if "pending_dataset" in st.session_state:
+        st.session_state["dataset"] = st.session_state.pop("pending_dataset")
+    dataset = st.selectbox("Data source", ["Generated demo", "Manual demo"], key="dataset")
+    if "saved_notice" in st.session_state:
+        st.success("The fictional record was saved to the local SQLite database; Manual demo is now selected.")
+        for warning in st.session_state.pop("saved_notice"):
+            st.warning(warning)
     try:
-        daily, notices = prepare_daily_data(generate_demo_data())
+        manual = load_records()
+    except StorageError as exc:
+        st.error(str(exc))
+        manual = pd.DataFrame(columns=["measured_at"])
+    record_form(manual)
+    if dataset == "Manual demo" and manual.empty:
+        st.info("No manual demo records are available, or the database could not be read. Add a fictional record using the form. The generated 21-day demo remains separate.")
+        return
+    try:
+        daily, notices = prepare_daily_data(generate_demo_data() if dataset == "Generated demo" else manual)
         analyzed = analyze_daily(daily)
     except ValueError as exc:
-        st.error(f"Veri hazırlanamadı: {exc}")
+        st.error(f"Could not prepare the data: {exc}")
         st.stop()
     for notice in notices:
         st.warning(notice)
 
     with st.sidebar:
-        st.header("Demo mürettebat profili")
-        st.subheader("Deniz Yıldız")
-        st.write("Kurmaca astronot · DEMO-001")
-        st.caption("Simülasyon: AKYILDIZ-01\n\nKaynak: synthetic_demo\n\nProfil ve görev bilgileri kurmacadır.")
-        selected = st.selectbox("İncelenecek gün", list(analyzed.index.date), index=len(analyzed) - 1)
-        window = st.radio("Grafik aralığı", [7, 14, 21], index=2, format_func=lambda n: f"Son {n} gün")
-        st.caption("Sabit demo dönemi: 25 Ekim – 14 Kasım 2026. Sayfa yenilendiğinde ölçümler değişmez.")
+        st.header("Demo crew profile")
+        st.subheader("Deniz Yıldız" if dataset == "Generated demo" else "Manual demo profile")
+        st.write("Fictional astronaut · " + str(daily.subject_id.iloc[0]))
+        st.caption(f"Source: {daily.source_type.iloc[0]}\n\nAll data are synthetic/fictional. Generated and manual records are not combined.")
+        selected = st.selectbox("Review date", list(analyzed.index.date), index=len(analyzed) - 1)
+        window = st.radio("Chart range", [7, 14, 21], index=2, format_func=lambda n: f"Last {n} days")
+        if dataset == "Generated demo":
+            st.caption("Fixed demo period: 25 October – 14 November 2026. Measurements do not change when the page is refreshed.")
+        else:
+            st.caption("Manual records persist in a local SQLite database. A second record for the same date is rejected; editing and deletion are not supported.")
 
     endpoint = pd.Timestamp(selected)
     row = analyzed.loc[endpoint]
     shown = analyzed.loc[endpoint - pd.Timedelta(days=window - 1):endpoint]
-    st.subheader(f"Günlük genel bakış · {endpoint:%d.%m.%Y}")
+    st.subheader(f"Daily overview · {endpoint:%d.%m.%Y}")
     for column, (metric, (label, unit, _)) in zip(st.columns(3), METRIC_LABELS.items()):
         with column:
             delta = row[f"{metric}_delta"]
             st.metric(label, display_value(row[metric], metric),
                       delta=f"{delta:+.1f} {unit}" if pd.notna(delta) else None,
                       delta_color="off")
-            st.caption("Önceki takvim gününe göre fark" if pd.notna(delta) else "Önceki gün karşılaştırması için yeterli veri yok.")
+            st.caption("Change from the previous calendar day" if pd.notna(delta) else "Insufficient data for a previous-day comparison.")
             count = int(row[f"{metric}_count7"])
-            st.write("7 günlük ortalama: " + display_value(row[f"{metric}_mean7"], metric))
-            st.caption(f"Son 7 takvim gününde {count}/7 geçerli ölçüm")
+            st.write("7-day average: " + display_value(row[f"{metric}_mean7"], metric))
+            st.caption(f"{count}/7 valid measurements in the last 7 calendar days")
 
-    trends, records, research = st.tabs(["Günlük eğilimler", "Günlük kayıtlar", "Bilimsel bağlam ve yöntem"])
+    trends, records, research = st.tabs(["Daily trends", "Daily records", "Scientific context and methodology"])
     with trends:
-        st.caption("Kesikli çizgi: seçili gün dahil son 7 takvim günündeki mevcut ölçümlerin ortalaması. Eksikler doldurulmaz; grafik aralığından önceki günler ortalamaya katılabilir.")
+        st.caption(f"DEMO — SIMULATED DATA · Source: {daily.source_type.iloc[0]} · UTC days · missing values are not imputed.")
+        st.caption("Dashed line: the average of available measurements over the last 7 calendar days, including the selected day. Missing values are not imputed; the average may include days before the displayed chart range.")
         for metric in METRIC_LABELS:
             st.plotly_chart(trend_chart(shown, metric), width="stretch", key=f"chart_{metric}")
+            valid = int(shown[metric].notna().sum())
+            invalid = int(shown[f"{metric}_status"].eq("invalid").sum())
+            missing = int(shown[f"{metric}_status"].eq("missing").sum())
+            st.caption(f"{METRIC_LABELS[metric][0]} · {valid}/{len(shown)} valid; {missing} missing; {invalid} invalid. Missing and invalid values are excluded from the average.")
+        st.subheader("Personal demo comparison across separate periods")
+        st.caption(f"Baseline: {endpoint - pd.Timedelta(days=13):%d.%m.%Y} – {endpoint - pd.Timedelta(days=7):%d.%m.%Y}; comparison: {endpoint - pd.Timedelta(days=6):%d.%m.%Y} – {endpoint:%d.%m.%Y}. Requiring at least 5 records per period is a demo design choice, not a clinical threshold.")
+        for comparison in compare_periods(daily, endpoint):
+            st.info(comparison["message"])
+            st.caption(comparison["coverage"])
+        if dataset == "Manual demo":
+            st.caption("The daily heart rate chart shows the entered values. Records without confirmed resting conditions are excluded from period comparisons. Sensor accuracy has not been assessed.")
     with records:
-        st.write("Grafiklerde görünen dönemin günlük ölçümleri")
+        st.write("Daily measurements for the period displayed in the charts")
         st.dataframe(shown[list(daily.columns)].reset_index(), hide_index=True, width="stretch")
-        st.caption("Uyku ve aktivite dakika, dinlenme kalp atım hızı bpm cinsindedir. Tarihler UTC gününe göre işlenir.")
+        st.caption("Sleep and activity are in minutes; resting heart rate is in bpm. Dates are processed as UTC calendar days.")
     with research:
-        st.subheader("Araştırma başlangıç noktaları")
+        st.subheader("Research starting points")
         st.markdown("""
-        - [NASA Fatigue Countermeasures Laboratory](https://www.nasa.gov/human-systems-integration-division/human-performance/fatigue-countermeasures-laboratory/): uyku ve sirkadiyen ritim araştırmaları.
-        - [NASA Wearable Tech for Space Station Research](https://www.nasa.gov/humans-in-space/wearable-tech-for-space-station-research/): uyku, egzersiz ve kalp sağlığının giyilebilir cihazlarla incelenmesine örnekler.
+        - [NASA Fatigue Countermeasures Laboratory](https://www.nasa.gov/human-systems-integration-division/human-performance/fatigue-countermeasures-laboratory/): research on sleep and circadian rhythms.
+        - [NASA Wearable Tech for Space Station Research](https://www.nasa.gov/humans-in-space/wearable-tech-for-space-station-research/): examples of wearable technology used to study sleep, exercise, and heart health.
         """)
-        st.info("Bu kaynaklar bilimsel bağlam içindir. Demo değerleri bu araştırmalardan alınmadı; klinik eşik veya kişisel öneri türetilmedi. Ayrıntılı literatür doğrulaması ekip tarafından yapılacak.")
-        st.markdown("""**Yöntem:** Sabit tohum (2026) ile 21 günlük sentetik veri üretilir.
-        Günlük fark, önceki takvim gününe göre hesaplanır. Yedi günlük ortalama mevcut
-        değerleri kullanır; eksik değerler sıfır sayılmaz. İlk günlerdeki ortalama
-        kısmi pencereye dayanır ve kartta ölçüm sayısı gösterilir.
+        st.info("These sources provide scientific context. Demo values were not taken from these studies; no clinical thresholds or personalized recommendations were derived. Detailed literature verification remains a team task.")
+        st.markdown(dedent("""\
+        **Method:** A fixed seed (2026) generates 21 days of synthetic data.
+        Daily changes are calculated against the previous calendar day. The 7-day average uses available
+        values; missing values are not counted as zero. During the first days, the average
+        uses a partial window, and the cards show the observation count.
 
-        **Veri kalitesi:** Sayısal olmayan/sonsuz değerler ve negatif süreler dışlanır.
-        Günlük süreler 0–1440 dakika, kalp atım hızı pozitif sonlu sayı olmalıdır.
-        Bunlar yalnızca veri biçimi kontrolleridir, sağlıklı/sağlıksız sınırları değildir.
-        Yinelenen günler reddedilir. Eksik günlerde grafik çizgisi kesilir.
-        """)
-    st.caption("AKYILDIZ · AstroCare AI · Sentetik veriyle açıklayıcı analiz")
+        **Data quality:** Non-numeric/infinite values and negative durations are excluded.
+        Daily durations must be 0–1440 minutes; heart rate must be a positive finite number.
+        These are data-format checks, not boundaries between healthy and unhealthy measurements.
+        Duplicate dates are rejected. Chart lines have gaps where daily measurements are missing.
+        """))
+        st.caption("Scientific status: CORRECTIONS REQUIRED. Real NASA data has not been integrated. Manual records are also fictional; source/license suitability and scientific acceptance remain unresolved.")
+    st.caption("AKYILDIZ · AstroCare AI · Descriptive analysis with synthetic data")
 
 
 if __name__ == "__main__":

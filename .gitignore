@@ -22,3 +22,10 @@ htmlcov/
 # Windows metadata
 Thumbs.db
 Desktop.ini
+
+# Local fictional health records and SQLite sidecars
+local_data/
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*

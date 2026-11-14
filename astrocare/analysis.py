@@ -7,6 +7,10 @@ from astrocare.data import METRICS, LABELS
 
 def analyze_daily(daily: pd.DataFrame) -> pd.DataFrame:
     """Input is a sorted, complete daily calendar from prepare_daily_data."""
+    if "source_type" in daily and not daily.source_type.isin(["synthetic_demo", "manual_demo"]).all():
+        raise ValueError("Research samples cannot enter synthetic health telemetry analysis.")
+    if "is_synthetic" in daily and not daily.is_synthetic.eq(True).all():
+        raise ValueError("Only synthetic records may enter health telemetry analysis.")
     result = daily.copy()
     
     result["sleep_hours"] = result["sleep_minutes"] / 60
@@ -30,6 +34,8 @@ def compare_periods(daily, endpoint, min_valid=5):
         raise ValueError("The minimum observation count for comparisons must be between 1 and 7.")
     if daily.subject_id.nunique() != 1 or daily.source_type.nunique() != 1:
         raise ValueError("Different subjects or data sources cannot be compared.")
+    if not daily.source_type.isin(["synthetic_demo", "manual_demo"]).all() or not daily.is_synthetic.eq(True).all():
+        raise ValueError("Research samples cannot enter synthetic period comparisons.")
     end = pd.Timestamp(endpoint).normalize()
     rows = []
     for metric in METRICS:

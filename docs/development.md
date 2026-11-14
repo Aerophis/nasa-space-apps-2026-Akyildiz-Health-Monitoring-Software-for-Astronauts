@@ -27,7 +27,9 @@ charts, `astrocare/storage.py` handles local persistence, and `app.py` provides 
 The generated demo has fixed dates: 25 October–14 November 2026. It is generated
 in memory rather than downloaded. Calculations use UTC calendar days. The
 generated profile and fictional manual profile remain separate. File upload,
-external API ingestion, and real NASA data integration are not supported.
+external API ingestion into the health dashboard are not supported. The separate
+Sprint 3 research explorer loads prepared public NASA-hosted samples without
+merging them into these fictional records.
 
 During daily preparation, records with invalid dates are excluded; if no valid
 dates remain, an error is shown. Missing numbers are not estimated. Duplicate
@@ -101,3 +103,45 @@ must use professional English. Preserve proper names, source titles, file paths,
 API identifiers, and historical evidence. Protected local research documents are
 not translated or included in delivery. Sprint reports retain their original
 implementation/review results; language review results are reported separately.
+
+## Sprint 3 — separate NASA research workspace
+
+```powershell
+.\.venv\Scripts\python.exe -m astrocare.acquire_research
+```
+
+This explicit command obtains the reviewed unrestricted OSD-575 CMP CSV and study
+metadata through the official NASA APIs, checks pinned SHA-256 values and schema,
+and records acquisition details in `research_data/OSD-575/receipt.json`.
+Existing files are not overwritten. If NASA changes the reviewed bytes, acquisition
+stops for a separate version/schema review rather than accepting unknown data.
+`ASTROCARE_RESEARCH_DIR` can select another local research directory.
+
+The **Workspace** selector switches between the existing health dashboard and
+**NASA Research Data Explorer**. The latter performs no network access and works
+offline after preparation. Missing/checksum-invalid data produce errors and source
+information only, never fabricated numerical observations.
+
+`data/osd575_manifest.json` contains source/DOI/license notes, reviewed field names,
+explicit analyte/unit mappings, expected shape, and checksum pins. No participant
+measurements are stored in that manifest. The locally acquired raw files are ignored
+by Git. Original study samples are validated against the study metadata rather than
+guessed from a synthetic mission calendar.
+
+The explorer selects albumin, glucose, sodium, and creatinine only. These are serum
+assay observations, displayed as discrete sample markers with published pseudonyms.
+L denotes days before launch; R denotes days after return. These are different time
+anchors, not a continuous daily health timeline. R+194 is retained from the actual
+CSV/sample metadata even though the narrative study summary describes fewer visits.
+Reference-range and demographic/race-based derived columns are not interpreted.
+
+`astrocare/research.py` handles offline validation/parsing; `acquire_research.py`
+handles explicit network preparation; `research_ui.py` renders the separate view;
+`science.py` provides deterministic, linked scientific context. Real research
+records are rejected by the synthetic analysis/chart boundaries. The manual SQLite
+schema and existing sleep classifier are unchanged.
+
+Tests isolate both database and research directories. Small artificial parser fixtures
+are test inputs only; they are not application fallback data. The local integration
+was separately checked against all 112 selected values in the actual downloaded CSV.
+Scientific status remains **CORRECTIONS REQUIRED**; see the correction matrix.

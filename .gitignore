@@ -29,3 +29,6 @@ local_data/
 *.sqlite3-*
 *.db
 *.db-*
+
+# Locally acquired public research files; use the acquisition script
+research_data/

@@ -9,6 +9,8 @@ from astrocare.analysis import analyze_daily, compare_periods
 from astrocare.charts import METRIC_LABELS, trend_chart
 from astrocare.data import generate_demo_data, prepare_daily_data, manual_form_record, validate_health_record
 from astrocare.storage import load_records, save_record, StorageError
+from astrocare.research_ui import render_research_explorer
+from astrocare.science import explanation_cards
 
 
 def display_value(value, metric):
@@ -57,14 +59,19 @@ def main():
     [data-testid="stMetric"] {background: #14243b; border: 1px solid #344b68;
         border-radius: 12px; padding: 18px;}
     </style>""", unsafe_allow_html=True)
-    st.caption("AKYILDIZ  /  MISSION HEALTH MONITORING PROTOTYPE  /  SPRINT 2")
+    st.caption("AKYILDIZ  /  MISSION HEALTH MONITORING RESEARCH PROTOTYPE  /  SPRINT 3")
     st.title("✦ AstroCare AI")
     st.write("Explore daily measurements and track changes over time.")
-    st.warning("DEMO — SIMULATED DATA · All measurements are fictional; they are not real NASA or astronaut health data.")
     st.caption("This prototype does not provide diagnoses, medical risk scores, or medication advice. It is not NASA-approved. This version does not run an AI model.")
+    workspace = st.radio("Workspace", ["Health dashboard", "NASA Research Data Explorer"], horizontal=True, key="workspace")
+    if workspace == "NASA Research Data Explorer":
+        render_research_explorer()
+        return
+    st.warning("DEMO — SIMULATED DATA · All measurements in the health dashboard are fictional; they are not real NASA or astronaut health data.")
     if "pending_dataset" in st.session_state:
         st.session_state["dataset"] = st.session_state.pop("pending_dataset")
     dataset = st.selectbox("Data source", ["Generated demo", "Manual demo"], key="dataset")
+    st.caption("SIMULATED HEALTH TELEMETRY" if dataset == "Generated demo" else "MANUALLY ENTERED DEMO DATA")
     if "saved_notice" in st.session_state:
         st.success("The fictional record was saved to the local SQLite database; Manual demo is now selected.")
         for warning in st.session_state.pop("saved_notice"):
@@ -106,13 +113,19 @@ def main():
     for column, (metric, (label, unit, _)) in zip(st.columns(3), METRIC_LABELS.items()):
         with column:
             delta = row[f"{metric}_delta"]
+            if metric == "resting_hr_bpm" and dataset == "Manual demo":
+                previous_date = endpoint - pd.Timedelta(days=1)
+                comparable = (row.rest_state == "confirmed" and previous_date in daily.index
+                              and daily.loc[previous_date, "rest_state"] == "confirmed")
+                if not comparable:
+                    delta = float("nan")
             st.metric(label, display_value(row[metric], metric),
                       delta=f"{delta:+.1f} {unit}" if pd.notna(delta) else None,
                       delta_color="off")
             st.caption("Change from the previous calendar day" if pd.notna(delta) else "Insufficient data for a previous-day comparison.")
             count = int(row[f"{metric}_count7"])
             st.write("7-day average: " + display_value(row[f"{metric}_mean7"], metric))
-            st.caption(f"{count}/7 valid measurements in the last 7 calendar days")
+            st.caption(f"{count}/7 valid numeric measurements in the last 7 calendar days; not sensor validation")
 
     trends, records, research = st.tabs(["Daily trends", "Daily records", "Scientific context and methodology"])
     with trends:
@@ -136,6 +149,17 @@ def main():
         st.dataframe(shown[list(daily.columns)].reset_index(), hide_index=True, width="stretch")
         st.caption("Sleep and activity are in minutes; resting heart rate is in bpm. Dates are processed as UTC calendar days.")
     with research:
+        st.subheader("SCIENTIFIC BACKGROUND INFORMATION")
+        st.caption("These are source-backed context cards, not clinical assessments. Observations, calculated trends, and prototype rules are explicitly separated.")
+        for card in explanation_cards(daily, endpoint, compare_periods(daily, endpoint)):
+            with st.expander(METRIC_LABELS[card["metric"]][0] + " — evidence and limits"):
+                st.write("**Observed demo data:** " + card["observed"])
+                st.write("**Calculated trend:** " + card["calculated"])
+                st.caption(card["coverage"])
+                st.write("**Prototype design rule:** " + card["design_rule"])
+                st.write("**Published research context:** " + card["finding"])
+                st.markdown(f"[Source: {card['title']}]({card['url']})")
+                st.caption("Limitation: " + card["limitation"])
         st.subheader("Research starting points")
         st.markdown("""
         - [NASA Fatigue Countermeasures Laboratory](https://www.nasa.gov/human-systems-integration-division/human-performance/fatigue-countermeasures-laboratory/): research on sleep and circadian rhythms.
@@ -153,7 +177,7 @@ def main():
         These are data-format checks, not boundaries between healthy and unhealthy measurements.
         Duplicate dates are rejected. Chart lines have gaps where daily measurements are missing.
         """))
-        st.caption("Scientific status: CORRECTIONS REQUIRED. Real NASA data has not been integrated. Manual records are also fictional; source/license suitability and scientific acceptance remain unresolved.")
+        st.caption("Scientific status: CORRECTIONS REQUIRED. Authentic OSD-575 serum research is available in its separate explorer after local preparation; it is not sleep/heart-rate/activity telemetry. The health dashboard remains entirely fictional. Scientific acceptance and official Resources eligibility remain unresolved.")
     st.caption("AKYILDIZ · AstroCare AI · Descriptive analysis with synthetic data")
 
 

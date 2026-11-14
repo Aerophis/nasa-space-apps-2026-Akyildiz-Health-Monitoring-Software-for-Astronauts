@@ -10,6 +10,9 @@ METRIC_LABELS = {
 
 
 def trend_chart(data, metric):
+    if ("source_type" in data and not data.source_type.isin(["synthetic_demo", "manual_demo"]).all()
+            or "is_synthetic" in data and not data.is_synthetic.eq(True).all()):
+        raise ValueError("Real research samples cannot be plotted as simulated health telemetry.")
     title, unit, color = METRIC_LABELS[metric]
     fig = go.Figure()
     for column, name, dash in (

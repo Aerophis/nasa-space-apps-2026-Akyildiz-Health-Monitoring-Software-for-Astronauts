@@ -11,7 +11,8 @@ scores, medication advice, or treatment recommendations. It is not NASA-approved
 or clinically validated.
 
 > **DEMO — SIMULATED DATA**
-> All supported records are fictional. Do not enter real personal health data or identifying information.
+> Health dashboard records are fictional. Do not enter real personal health data or identifying information.
+> The separate research explorer displays verified public NASA-hosted biospecimen data after local preparation.
 > Scientific review status: **CORRECTIONS REQUIRED**.
 
 ## Current features
@@ -24,6 +25,10 @@ or clinically validated.
 - Local SQLite persistence; existing records are never silently overwritten.
 - Comparisons between two non-overlapping 7-day periods. At least 5 comparable records per metric in each period are required before a descriptive comparison is shown.
 - Deterministic explanatory messages, source labels, and demo labels embedded in chart images.
+- A separate OSD-575 research explorer for four serum analytes, with sample context,
+  original units, license/source information, checksums, and offline loading.
+- Source-backed context cards separating observations, calculated trends, prototype
+  rules, and published research context.
 
 The 5-record requirement and duration/date limits are demo design and data-format
 rules, not clinical thresholds. Manual resting-heart-rate records without confirmed
@@ -90,10 +95,26 @@ data handling, multi-user access control, record editing, and deletion are not s
 
 ## Scientific limitations and NASA data status
 
-**Real NASA health data or telemetry has not been integrated.** Official challenge
-Resources verification, suitable file selection, licensing, and field mapping
-remain open. OSD-575 has not been treated as a sleep/heart-rate/exercise time series.
+**A real NASA-hosted OSD-575 CMP file is integrated locally in a separate research explorer.**
+It contains scheduled serum samples from Inspiration4 commercial crew, not daily
+sleep/heart-rate/exercise telemetry or NASA career astronaut monitoring. The three
+health dashboard metrics remain fictional. The official challenge Resources list
+and eligibility still require verification. No clinical acceptance is claimed.
 See the [NASA data research log](docs/nasa-data-research.md).
+
+Prepare the reviewed local snapshots once, with internet access:
+
+```powershell
+.\.venv\Scripts\python.exe -m astrocare.acquire_research
+```
+
+Then choose **NASA Research Data Explorer** in the application's **Workspace** selector.
+The explorer works offline after preparation. A missing, changed, or invalid file
+shows a clear error rather than simulated replacement values. Raw CSV and metadata
+remain under ignored `research_data/OSD-575/`; they are not proposed for GitHub delivery.
+The public [manifest](data/osd575_manifest.json) pins the reviewed schema and checksums.
+The source study lists CC0-1.0 and the file API marks this CSV unrestricted; acquisition
+and licensing evidence are documented in the research log.
 
 Technical test success does not constitute scientific acceptance or clinical
 validation. The prototype does not establish sensor accuracy, diagnose conditions,
@@ -113,6 +134,8 @@ With explicit authorization, Codex implemented the remaining Sprint 2 software,
 integration, and additional tests. These AI-assisted contributions are not described
 as code written entirely by hand by the lead. The product name does not imply a
 running AI model: no Ollama or other AI inference service is integrated.
+Sprint 3 research loading, parsing, UI, scientific-context cards, and tests were
+also developed with Codex assistance under the lead's explicit authorization.
 
 ## Project documentation
 
@@ -120,6 +143,8 @@ running AI model: no Ollama or other AI inference service is integrated.
 - [Sprint 1 historical review](docs/sprint-1.md)
 - [Sprint 2 implementation report](docs/sprint-2.md)
 - [NASA data research and follow-up work](docs/nasa-data-research.md)
+- [Scientific correction matrix](docs/scientific-corrections.md)
+- [Sprint 3 implementation report](docs/sprint-3.md)
 
 Local scientific PDF/DOCX documents under `docs/research/` are excluded from the
 proposed delivery. Their presence locally is not permission to redistribute them.

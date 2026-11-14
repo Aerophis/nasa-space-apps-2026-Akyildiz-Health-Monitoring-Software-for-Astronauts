@@ -12,6 +12,13 @@ def isolated_database(tmp_path, monkeypatch):
     return path
 
 
+@pytest.fixture(autouse=True)
+def isolated_research_directory(tmp_path, monkeypatch):
+    path = tmp_path / "research"
+    monkeypatch.setenv("ASTROCARE_RESEARCH_DIR", str(path))
+    return path
+
+
 @pytest.fixture
 def record_factory():
     def make(day="2026-11-15", **changes):

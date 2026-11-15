@@ -3,6 +3,8 @@
 import copy
 import hashlib
 import json
+from html import escape
+from html.parser import HTMLParser
 
 import pandas as pd
 import pytest
@@ -10,6 +12,10 @@ import pytest
 from astrocare import acquire_research, research
 from astrocare.analysis import analyze_daily, compare_periods
 from astrocare.data import METRICS, generate_demo_data, prepare_daily_data
+
+
+def _comparison_rows(view):
+    return [row for phase in view.phases for row in phase.measurements]
 
 
 @pytest.fixture
@@ -154,19 +160,246 @@ def test_research_cannot_enter_health_pipeline(nasa_fixture):
 
 def test_research_chart_is_samples_not_continuous_telemetry(nasa_fixture):
     frame = research.load_research().observations.query("analyte == 'Albumin'")
-    fig = research.research_chart(frame)
-    assert list(fig.data[0].x) == ["L-3", "R+1"]
-    assert list(fig.data[0].y) == [4.0, 4.1]
-    assert fig.data[0].mode == "markers"
-    assert fig.layout.yaxis.title.text == "g/dL"
-    assert "Not daily telemetry" in fig.layout.annotations[0].text
-    assert fig.to_json()
+    view = research.research_chart(frame)
+    assert [row.label for row in _comparison_rows(view)] == ["L-3", "R+1"]
+    assert [row.value for row in _comparison_rows(view)] == [4.0, 4.1]
+    assert view.unit == "g/dL" and view.dataset_id == "OSD-575"
+    assert view.valid_count == view.sample_count == 2
     with pytest.raises(research.ResearchError):
         research.research_chart(research.load_research().observations)
     fake = frame.copy()
     fake["is_synthetic"] = True
     with pytest.raises(research.ResearchError):
         research.research_chart(fake)
+
+
+def test_research_cards_preserve_visit_phase_and_units(nasa_fixture):
+    selected = research.load_research().observations.query("analyte == 'Albumin'").sort_values("relative_day")
+    view = research.research_chart(selected)
+    assert [phase.color for phase in view.phases] == ["#65B8D2", "#E4A17C"]
+    assert [row.phase for row in _comparison_rows(view)] == list(selected.phase)
+    assert [row.value_label for row in _comparison_rows(view)] == ["4.0", "4.1"]
+    assert view.unit == "g/dL"
+    assert [row.label for row in _comparison_rows(view)] == list(selected.timepoint)
+
+
+@pytest.mark.parametrize("language", ["en", "tr", "fr", "de", "es"])
+def test_research_language_preserves_values_and_moves_source_to_details(nasa_fixture, language):
+    from pathlib import Path
+    from streamlit.testing.v1 import AppTest
+    from astrocare.i18n import Translator
+
+    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py").run(timeout=30)
+    app.radio(key="workspace").set_value("NASA Research Data Explorer").run(timeout=30)
+    original = app.dataframe[0].value.copy(deep=True)
+    app.selectbox(key="language").select(language).run(timeout=30)
+    t = Translator(language)
+    assert not app.exception
+    header = next(item.value for item in app.markdown if 'data-testid="research-header"' in item.value)
+    assert escape(t("verified_data")) in header
+    assert escape(t("research_only")) in header
+    assert escape(t("research_separation")) in header
+    assert not app.success and not app.warning
+    assert not app.title
+    safety = next(exp for exp in app.expander if exp.label == t("safety"))
+    assert any(item.value == t("research_status") for item in safety.caption)
+    assert any(item.value == t("prototype") for item in safety.markdown)
+    study = next(exp for exp in app.expander if exp.label == t("study_context"))
+    assert any(item.value == t("research_limits") for item in study.markdown)
+    assert any(item.value == t("serum_timeline") for item in study.caption)
+    assert any(item.value == t("counts_note") for item in study.caption)
+    pd.testing.assert_frame_equal(app.dataframe[0].value, original)
+    details = next(exp for exp in app.expander if exp.label == t("provenance"))
+    assert any("CC0-1.0" in item.value and "osdr.nasa.gov" in item.value for item in details.markdown)
+    fig = research.research_chart(research.load_research().observations.query("analyte == 'Albumin'"), language)
+    assert [row.value for row in _comparison_rows(fig)] == [4.0, 4.1]
+    assert fig.unit == "g/dL"
+    assert any(item.value == t("serum_timeline") for item in app.caption)
+    assert any(item.value == t("timeline_key") for item in app.caption)
+    assert any(exp.label == t("view_samples") for exp in app.expander)
+    assert list(app.dataframe[0].value.timepoint) == ["L-3", "R+1"]
+    html = next(item.value for item in app.markdown if 'data-testid="research-comparison"' in item.value)
+    assert t("comparison_available", valid=2, total=2) in html
+    assert "Albumin" in html and "C001" in html and "g/dL" in html
+
+
+@pytest.mark.parametrize("invalid_file", ["csv", "metadata", "receipt", "manifest"])
+def test_verified_indicator_is_withdrawn_when_local_integrity_fails(nasa_fixture, invalid_file):
+    from pathlib import Path
+    from streamlit.testing.v1 import AppTest
+
+    root, manifest, _, _ = nasa_fixture
+    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py").run(timeout=30)
+    app.radio(key="workspace").set_value("NASA Research Data Explorer").run(timeout=30)
+    assert any('data-testid="research-verified"' in item.value for item in app.markdown)
+    target = {"csv": root / manifest["file_name"], "metadata": root / "study_metadata.json",
+              "receipt": root / "receipt.json", "manifest": research.MANIFEST_PATH}[invalid_file]
+    target.write_text("{}", encoding="utf-8")
+    app.run(timeout=30)
+    assert not app.exception and app.error
+    header = next(item.value for item in app.markdown if 'data-testid="research-header"' in item.value)
+    assert 'data-testid="research-verified"' not in header
+    assert not any('data-testid="research-comparison"' in item.value for item in app.markdown)
+    assert any(exp.label == "Safety & Scientific Review" for exp in app.expander)
+
+
+@pytest.mark.parametrize("language", ["en", "tr", "fr", "de", "es"])
+def test_research_phase_cards_context_and_scale_preserve_source_semantics(nasa_fixture, language):
+    from astrocare.i18n import Translator
+    from astrocare.research_cards import research_cards_html
+    from astrocare.theme import COLORS
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'").sort_values("relative_day")
+    view = research.research_chart(frame, language)
+    t = Translator(language)
+    rows = _comparison_rows(view)
+    assert len(view.phases) == 2
+    assert [row.label for row in rows] == ["L-3", "R+1"]
+    assert [row.value for row in rows] == [4.0, 4.1]
+    assert [row.context for row in rows] == [t("before_launch", days=3), t("after_return", days=1)]
+    assert view.subject_id == "C001" and view.analyte == "Albumin"
+    assert view.unit == "g/dL" and view.dataset_id == "OSD-575"
+    assert [phase.title for phase in view.phases] == [t("pre_flight"), t("post_flight")]
+    assert [phase.color for phase in view.phases] == [COLORS["research"], COLORS["heart"]]
+    assert [row.value_label for row in rows] == ["4.0", "4.1"]
+    assert view.scale_max > max(frame.value)
+    assert [row.fraction for row in rows] == [row.value / view.scale_max for row in rows]
+    html = research_cards_html(view)
+    assert 'data-testid="research-comparison"' in html
+    assert html.count('class="ac-phase"') == 2
+    assert html.count('data-scale-max="' + str(view.scale_max) + '"') == 3
+    for row, phase in zip(rows, view.phases):
+        detail = t("comparison_row_info", subject=view.subject_id, analyte=view.analyte,
+                   value=row.value_label, unit=view.unit, point=row.label, phase=phase.title,
+                   context=row.context, dataset=view.dataset_id)
+        assert escape(detail, quote=True) in html
+    assert escape(t("shared_research_scale", maximum=view.scale_label, unit=view.unit)) in html
+
+
+@pytest.mark.parametrize("value", [None, float("nan"), 0.0])
+def test_card_values_preserve_missing_and_explicit_zero(nasa_fixture, value):
+    from astrocare.i18n import Translator
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    frame.loc[frame.timepoint.eq("R+1"), "value"] = value
+    original = frame.copy(deep=True)
+    view = research.research_chart(frame)
+    pd.testing.assert_frame_equal(frame, original)
+    row = view.phases[1].measurements[0]
+    if pd.isna(value):
+        assert row.value is None and row.fraction is None
+        assert row.value_label == Translator()("missing_result")
+        assert 'data-missing="true"' in research_cards_html(view)
+        assert view.valid_count == 1
+    else:
+        assert row.value == row.fraction == 0
+        assert row.value_label == "0.0"
+        assert view.valid_count == 2
+    assert view.phases[0].measurements[0].value_label == "4.0"
+
+
+def test_column_groups_reject_unknown_phase_without_silently_dropping_samples(nasa_fixture):
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    frame.loc[frame.timepoint.eq("R+1"), "phase"] = "unknown"
+    with pytest.raises(research.ResearchError):
+        research.research_chart(frame)
+
+
+class _CardHTML(HTMLParser):
+    def __init__(self, source):
+        super().__init__()
+        self.elements = []
+        self.feed(source)
+
+    def handle_starttag(self, tag, attrs):
+        self.elements.append({"tag": tag, **dict(attrs)})
+
+    def by_class(self, name):
+        return [element for element in self.elements if name in element.get("class", "").split()]
+
+
+def test_cards_use_one_global_scale_not_one_scale_per_phase(nasa_fixture):
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    frame.loc[frame.phase.eq("Post-flight"), "value"] = 40.0
+    view = research.research_chart(frame)
+    rows = _comparison_rows(view)
+    assert rows[0].fraction < .1
+    assert rows[1].fraction > .8
+    assert rows[0].fraction / rows[1].fraction == pytest.approx(4 / 40)
+    parsed = _CardHTML(research_cards_html(view))
+    assert [float(panel["data-scale-max"]) for panel in parsed.by_class("ac-phase")] == [view.scale_max] * 2
+    fills = parsed.by_class("ac-fill")
+    widths = [float(fill["style"].split("width:")[1].split("%")[0]) for fill in fills]
+    assert widths == pytest.approx([row.value / view.scale_max * 100 for row in rows])
+
+
+def test_empty_phase_is_visible_without_inventing_visits(nasa_fixture):
+    from astrocare.i18n import Translator
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin' and phase == 'Post-flight'")
+    view = research.research_chart(frame)
+    assert len(view.phases) == 2
+    assert not view.phases[0].measurements
+    assert view.sample_count == view.valid_count == 1
+    html = research_cards_html(view)
+    assert Translator()("no_phase_samples") in html
+    assert len(_CardHTML(html).by_class("ac-row")) == 1
+
+
+@pytest.mark.parametrize("value", [-1.0, float("inf"), -float("inf")])
+def test_shared_scale_rejects_unsupported_values_without_clamping(nasa_fixture, value):
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    frame.loc[frame.timepoint.eq("R+1"), "value"] = value
+    original = frame.copy(deep=True)
+    with pytest.raises(research.ResearchError, match="shared zero-based"):
+        research.research_chart(frame)
+    pd.testing.assert_frame_equal(frame, original)
+
+
+def test_card_value_labels_retain_numeric_precision(nasa_fixture):
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    value = 4.1234567891234
+    frame.loc[frame.timepoint.eq("R+1"), "value"] = value
+    view = research.research_chart(frame)
+    assert view.phases[1].measurements[0].value_label == str(value)
+    assert str(value) in research_cards_html(view)
+
+
+def test_card_renderer_escapes_source_text_in_content_and_attributes(nasa_fixture):
+    from dataclasses import replace
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'")
+    view = replace(research.research_chart(frame), subject_id='<img src=x onerror="alert(1)">')
+    html = research_cards_html(view)
+    assert "<img" not in html
+    assert escape(view.subject_id, quote=True) in html
+    assert all(element["tag"] != "img" for element in _CardHTML(html).elements)
+
+
+@pytest.mark.parametrize("language", ["en", "tr", "fr", "de", "es"])
+def test_all_missing_results_remain_missing_in_each_language(nasa_fixture, language):
+    from astrocare.i18n import Translator
+    from astrocare.research_cards import research_cards_html
+
+    frame = research.load_research().observations.query("analyte == 'Albumin'").copy()
+    frame["value"] = float("nan")
+    view = research.research_chart(frame, language)
+    t = Translator(language)
+    assert view.scale_max == 1.0 and view.valid_count == 0 and view.sample_count == 2
+    assert all(row.value is row.fraction is None for row in _comparison_rows(view))
+    html = research_cards_html(view)
+    parsed = _CardHTML(html)
+    assert not parsed.by_class("ac-fill")
+    assert len(parsed.by_class("ac-missing")) == 2
+    assert escape(t("missing_result")) in html
+    assert escape(t("comparison_available", valid=0, total=2)) in html
 
 
 def test_existing_acquisition_is_offline_and_non_destructive(nasa_fixture, monkeypatch):
@@ -183,8 +416,10 @@ def test_research_workspace_displays_loaded_samples_and_source_metadata(nasa_fix
     app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py").run(timeout=30)
     app.radio(key="workspace").set_value("NASA Research Data Explorer").run(timeout=30)
     assert not app.exception
-    assert any("AUTHENTIC NASA RESEARCH DATA" in message.value for message in app.success)
-    assert len(app.get("plotly_chart")) == 1
+    header = next(item.value for item in app.markdown if 'data-testid="research-header"' in item.value)
+    assert 'data-testid="research-verified"' in header
+    assert not app.get("plotly_chart")
+    assert any('data-testid="research-comparison"' in item.value for item in app.markdown)
     assert len(app.dataframe[0].value) == 2
     assert app.dataframe[0].value.iloc[0].value == 4.0
     app.selectbox(key="research_analyte").select("Glucose").run(timeout=30)

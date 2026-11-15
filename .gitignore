@@ -32,3 +32,6 @@ local_data/
 
 # Locally acquired public research files; use the acquisition script
 research_data/
+
+# Local scientific review originals; not part of the public delivery
+docs/research/

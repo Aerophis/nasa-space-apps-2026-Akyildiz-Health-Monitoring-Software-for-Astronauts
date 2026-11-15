@@ -8,9 +8,12 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from decimal import Decimal, ROUND_CEILING
+from math import isfinite
 
 import pandas as pd
-import plotly.graph_objects as go
+from astrocare.i18n import Translator
+from astrocare.theme import COLORS
 
 MANIFEST_PATH = Path(__file__).resolve().parents[1] / "data" / "osd575_manifest.json"
 ANALYTES = {
@@ -159,24 +162,91 @@ def load_research(directory=None):
         raise ResearchError("The local research files cannot be read. Check the acquisition receipt and permissions; original files were not changed.") from exc
 
 
-def research_chart(observations):
-    """Sample markers, not an interpolated daily timeline or clinical threshold."""
+@dataclass(frozen=True)
+class ResearchMeasurement:
+    label: str
+    phase: str
+    value: float | None
+    value_label: str
+    fraction: float | None
+    context: str
+    anchor: str
+    sample_name: str
+
+
+@dataclass(frozen=True)
+class ResearchPhase:
+    phase: str
+    title: str
+    color: str
+    measurements: tuple[ResearchMeasurement, ...]
+
+
+@dataclass(frozen=True)
+class ResearchComparison:
+    subject_id: str
+    analyte: str
+    unit: str
+    dataset_id: str
+    language: str
+    scale_max: float
+    scale_label: str
+    phases: tuple[ResearchPhase, ...]
+
+    @property
+    def sample_count(self):
+        return sum(len(phase.measurements) for phase in self.phases)
+
+    @property
+    def valid_count(self):
+        return sum(row.value is not None for phase in self.phases for row in phase.measurements)
+
+
+def research_chart(observations, language="en"):
+    """Build the two-card presentation model, with one shared zero-based scale.
+
+    Retains the existing internal entry-point name; no Plotly figure, independent
+    phase normalization, clinical interpretation, or fabricated visits are produced.
+    """
     if (observations.empty or not observations.source_type.eq("nasa_research").all()
             or not observations.is_synthetic.eq(False).all()
             or observations.subject_id.nunique() != 1 or observations.analyte.nunique() != 1
-            or observations.unit.nunique() != 1):
+            or observations.unit.nunique() != 1
+            or not observations.phase.isin(["Pre-flight", "Post-flight"]).all()):
         raise ResearchError("Select one authentic research subject and analyte; incompatible records cannot be plotted together.")
     data = observations.sort_values("relative_day")
     if (not data.dataset_id.eq("OSD-575").all()
             or (data.analyte.iloc[0], data.unit.iloc[0]) not in ANALYTES.values()):
         raise ResearchError("The analyte/unit mapping is not a reviewed OSD-575 measurement.")
-    fig = go.Figure(go.Scatter(x=data.timepoint, y=data.value, mode="markers",
-                              marker={"size": 10, "color": "#61d7ff"}, connectgaps=False,
-                              hovertemplate="%{x}<br>%{y}<extra>Research sample</extra>"))
-    fig.update_layout(title=f"{data.analyte.iloc[0]} · {data.subject_id.iloc[0]} · OSD-575",
-                      xaxis={"title": "Scheduled sample (L: launch; R: return)", "type": "category"},
-                      yaxis_title=data.unit.iloc[0], template="plotly_dark", height=380,
-                      margin={"l": 20, "r": 20, "t": 60, "b": 90})
-    fig.add_annotation(text="AUTHENTIC NASA-HOSTED RESEARCH DATA · Serum samples · Not daily telemetry",
-                       x=0, y=-0.3, xref="paper", yref="paper", showarrow=False, xanchor="left")
-    return fig
+    available = [float(value) for value in data.value.dropna()]
+    if any(not isfinite(value) or value < 0 for value in available):
+        raise ResearchError("These measurements cannot be displayed on a shared zero-based bar scale. No values were changed.")
+    # One ceiling from BOTH phases, with modest headroom and a readable endpoint.
+    # This is a display extent, never a reference range or a target.
+    maximum = Decimal(str(max(available, default=0)))
+    if maximum > 0:
+        step = Decimal(1).scaleb(maximum.adjusted() - 1)
+        ceiling = (maximum * Decimal("1.1") / step).to_integral_value(rounding=ROUND_CEILING) * step
+    else:
+        ceiling = Decimal(1)
+    scale_max = float(ceiling)
+    t = Translator(language)
+    phases = []
+    for phase, key, color in (("Pre-flight", "pre_flight", COLORS["research"]),
+                               ("Post-flight", "post_flight", COLORS["heart"])):
+        rows = []
+        for row in data.loc[data.phase.eq(phase)].itertuples():
+            value = None if pd.isna(row.value) else float(row.value)
+            rows.append(ResearchMeasurement(
+                label=row.timepoint, phase=phase, value=value,
+                value_label=t("missing_result") if value is None else str(value),
+                fraction=None if value is None else value / scale_max,
+                context=t("before_launch" if row.anchor == "Launch" else "after_return", days=abs(row.relative_day)),
+                anchor=row.anchor, sample_name=row.sample_name,
+            ))
+        phases.append(ResearchPhase(phase, t(key), color, tuple(rows)))
+    return ResearchComparison(
+        subject_id=data.subject_id.iloc[0], analyte=data.analyte.iloc[0],
+        unit=data.unit.iloc[0], dataset_id="OSD-575", language=language,
+        scale_max=scale_max, scale_label=format(ceiling.normalize(), "f"), phases=tuple(phases),
+    )

@@ -29,6 +29,14 @@ or clinically validated.
   original units, license/source information, checksums, and offline loading.
 - Source-backed context cards separating observations, calculated trends, prototype
   rules, and published research context.
+- A brighter navy interface with readable summary cards, multi-select chart
+  visibility, and expandable evidence, methodology, and provenance details. Sleep uses
+  an area chart, heart rate a line chart, and activity a bar chart; NASA serum
+  research uses compact pre-/post-flight cards with thin horizontal bars, exact
+  numeric labels, and one shared zero-based scale. Cards stack on narrow screens.
+- English (default), Turkish, French, German, and Spanish interface options.
+  Seven-day coverage bars describe available numeric records, not health scores
+  or medical targets. Language changes preserve data and selected filters.
 
 The 5-record requirement and duration/date limits are demo design and data-format
 rules, not clinical thresholds. Manual resting-heart-rate records without confirmed
@@ -75,9 +83,14 @@ Set-Location -LiteralPath "C:\Users\Ynigh\Desktop\Nasa Spaceapps Challange"
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-Tests use temporary databases rather than the local application database. The
-Sprint 2 implementation run recorded **104 passed in 2.95s**; historical results
-and their limitations are documented in the sprint reports.
+Tests use temporary databases and research directories rather than local application
+data. Final Sprint 4 QA on 15 November 2026 recorded **228 passed in 13.83s**.
+All prior 224 scenarios remain covered, including shared-scale cards, source
+precision, missing data, and HTML escaping. Four additional cases verify that
+invalid CSV, metadata, acquisition receipt, or manifest files withdraw the verified
+indicator. Historical results
+and their limitations are documented in the sprint reports. Tests do not establish
+clinical validity or scientific acceptance.
 
 ## Demo data and local storage
 
@@ -108,13 +121,33 @@ Prepare the reviewed local snapshots once, with internet access:
 .\.venv\Scripts\python.exe -m astrocare.acquire_research
 ```
 
-Then choose **NASA Research Data Explorer** in the application's **Workspace** selector.
+Then choose **NASA Research Explorer** in the application's **Workspace** selector.
 The explorer works offline after preparation. A missing, changed, or invalid file
 shows a clear error rather than simulated replacement values. Raw CSV and metadata
 remain under ignored `research_data/OSD-575/`; they are not proposed for GitHub delivery.
 The public [manifest](data/osd575_manifest.json) pins the reviewed schema and checksums.
 The source study lists CC0-1.0 and the file API marks this CSV unrestricted; acquisition
 and licensing evidence are documented in the research log.
+
+The serum plot uses categorical sampling visits: L− means days before launch and
+R+ means days after return, verified against the prepared sample metadata. Launch
+and return are distinct reference events. Separate cyan pre-flight and coral
+post-flight cards identify the published participant, analyte, unit, visits, and
+exact measured values. Both use the same zero-based scale, calculated jointly
+from the selected measurements with modest display headroom; phases are never
+normalized independently. This scale is not a clinical reference range or target.
+Missing results have an explicit label and empty dashed track, distinct from a
+measured zero. No intermediate visits or paired comparisons are inferred.
+Use **View measurements** and the source/context expanders for records and
+provenance. Fluctuations are not interpreted as clinically significant.
+
+The compact header shows **Verified NASA-hosted data** only after local file
+checksums, schema, and acquisition receipt pass validation. This indicates local
+snapshot integrity, not NASA endorsement or scientific acceptance. **Research
+only · Not clinical monitoring** and the separation from synthetic health
+telemetry remain visible. Full limitations and **CORRECTIONS REQUIRED** remain
+accessible in **Safety & Scientific Review**, **Study Context & Limitations**, and
+**Dataset Details · Source & License**.
 
 Technical test success does not constitute scientific acceptance or clinical
 validation. The prototype does not establish sensor accuracy, diagnose conditions,
@@ -136,6 +169,9 @@ as code written entirely by hand by the lead. The product name does not imply a
 running AI model: no Ollama or other AI inference service is integrated.
 Sprint 3 research loading, parsing, UI, scientific-context cards, and tests were
 also developed with Codex assistance under the lead's explicit authorization.
+Sprint 4 presentation, regression tests, and delivery documentation were developed
+with Codex assistance following the Scrum Master's design direction. Scientific
+acceptance and GitHub delivery remain separate review decisions.
 
 ## Project documentation
 
@@ -145,6 +181,11 @@ also developed with Codex assistance under the lead's explicit authorization.
 - [NASA data research and follow-up work](docs/nasa-data-research.md)
 - [Scientific correction matrix](docs/scientific-corrections.md)
 - [Sprint 3 implementation report](docs/sprint-3.md)
+- [Sprint 4 UI/UX and final QA report](docs/sprint-4.md)
+- [Local demo and delivery checklist](docs/demo-checklist.md)
+- [Project submission draft](docs/submission-draft.md)
+- [30-second English demo storyboard](docs/demo-storyboard.md)
+- [Seven-slide English presentation outline](docs/presentation-outline.md)
 
 Local scientific PDF/DOCX documents under `docs/research/` are excluded from the
 proposed delivery. Their presence locally is not permission to redistribute them.

@@ -102,6 +102,10 @@ def test_chart_matches_measurements_and_rolling_series(metric):
     assert list(fig.data[0].x) == list(result.index.to_pydatetime())
     np.testing.assert_allclose(fig.data[0].y, result[metric], equal_nan=True)
     np.testing.assert_allclose(fig.data[1].y, result[f"{metric}_mean7"], equal_nan=True)
-    assert fig.data[0].connectgaps is False
+    if fig.data[0].type == "bar":
+        # Missing activity values remain absent bars; the mean still has gaps.
+        assert fig.data[1].connectgaps is False
+    else:
+        assert fig.data[0].connectgaps is False
     assert fig.layout.yaxis.title.text == ("bpm" if metric == "resting_hr_bpm" else "minutes")
     assert fig.to_json()
